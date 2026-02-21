@@ -23,8 +23,13 @@ const MortgageCalculator = () => {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
-  const monthlyPayment = (loanAmount * (interestRate / 100)) / 12;
-  const totalInterest = monthlyPayment * termYears * 12;
+  // Monthly compounding amortization formula: M = P * [r(1+r)^n] / [(1+r)^n - 1]
+  const monthlyRate = interestRate / 100 / 12;
+  const totalMonths = termYears * 12;
+  const monthlyPayment = loanAmount > 0 && monthlyRate > 0
+    ? (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / (Math.pow(1 + monthlyRate, totalMonths) - 1)
+    : 0;
+  const totalInterest = monthlyPayment * totalMonths - loanAmount;
 
   const handleGenerateReport = useCallback(() => {
     generatePDF({ loanAmount, interestRate, termYears, monthlyPayment, totalInterest });
@@ -51,7 +56,7 @@ const MortgageCalculator = () => {
             </div>
             <div>
               <h1 className="text-primary-foreground text-xl tracking-tight">MortgageCalc</h1>
-              <p className="text-primary-foreground/60 text-xs font-body">Interest-Only Calculator</p>
+              <p className="text-primary-foreground/60 text-xs font-body">Mortgage Calculator</p>
             </div>
           </div>
         </div>
@@ -66,10 +71,10 @@ const MortgageCalculator = () => {
           className="text-center mb-10"
         >
           <h2 className="text-3xl md:text-4xl text-foreground mb-3">
-            Interest-Only Mortgage Calculator
+            Mortgage Calculator
           </h2>
           <p className="text-muted-foreground font-body max-w-lg mx-auto">
-            Instantly calculate your monthly interest payments and total cost over any term. Adjust the sliders below to explore scenarios.
+            Calculate your monthly mortgage payments with monthly compounding. Adjust the sliders below to explore scenarios.
           </p>
         </motion.div>
 
@@ -109,7 +114,7 @@ const MortgageCalculator = () => {
             <div className="mb-8">
               <div className="flex justify-between items-baseline mb-3">
                 <label className="text-sm font-medium text-muted-foreground font-body flex items-center gap-2">
-                  <Percent className="w-4 h-4 text-gold" /> Annual Interest Rate
+                  <Percent className="w-4 h-4 text-gold" /> Interest Rate
                 </label>
                 <span className="text-xl font-semibold text-foreground font-body">{interestRate.toFixed(2)}%</span>
               </div>
@@ -171,7 +176,7 @@ const MortgageCalculator = () => {
                     {formatCurrencyDetailed(monthlyPayment)}
                   </motion.p>
                 </AnimatePresence>
-                <p className="text-xs text-muted-foreground font-body mt-1">Interest only, per month</p>
+                <p className="text-xs text-muted-foreground font-body mt-1">Principal + interest, per month</p>
               </div>
 
               <div className="border-t border-border pt-4 mb-6">
@@ -192,7 +197,7 @@ const MortgageCalculator = () => {
 
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-xs text-muted-foreground font-body leading-relaxed">
-                  💡 Interest-only payments do not reduce your principal. Your loan balance remains {formatCurrency(loanAmount)} throughout the term.
+                  💡 Monthly compounding means interest is calculated on your remaining balance each month. Total cost: {formatCurrencyDetailed(loanAmount + totalInterest)}.
                 </p>
               </div>
             </div>

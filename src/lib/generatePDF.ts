@@ -33,7 +33,7 @@ export function generatePDF(data: ReportData) {
   doc.text("MortgageCalc", 20, 22);
   doc.setFontSize(10);
   doc.setTextColor(200, 200, 220);
-  doc.text("Interest-Only Mortgage Report", 20, 32);
+  doc.text("Mortgage Report", 20, 32);
 
   // Date
   doc.setFontSize(9);
@@ -53,7 +53,7 @@ export function generatePDF(data: ReportData) {
     head: [["Parameter", "Value"]],
     body: [
       ["Loan Amount", fmtShort(data.loanAmount)],
-      ["Annual Interest Rate", `${data.interestRate.toFixed(2)}%`],
+      ["Interest Rate", `${data.interestRate.toFixed(2)}%`],
       ["Term", `${data.termYears} year${data.termYears !== 1 ? "s" : ""}`],
     ],
     theme: "grid",
@@ -74,10 +74,10 @@ export function generatePDF(data: ReportData) {
     startY: y,
     head: [["Metric", "Amount"]],
     body: [
-      ["Monthly Interest Payment", fmt(data.monthlyPayment)],
-      ["Annual Interest Cost", fmt(data.monthlyPayment * 12)],
+      ["Monthly Payment", fmt(data.monthlyPayment)],
+      ["Annual Payment", fmt(data.monthlyPayment * 12)],
       [`Total Interest Over ${data.termYears} Year${data.termYears !== 1 ? "s" : ""}`, fmt(data.totalInterest)],
-      ["Principal Remaining at End of Term", fmtShort(data.loanAmount)],
+      [`Total Cost (Principal + Interest)`, fmt(data.loanAmount + data.totalInterest)],
     ],
     theme: "grid",
     headStyles: { fillColor: [210, 170, 60], textColor: [26, 42, 68], fontSize: 10, fontStyle: "bold" },
@@ -95,7 +95,7 @@ export function generatePDF(data: ReportData) {
   doc.text("DISCLAIMER", 25, y + 8);
   doc.setFontSize(7.5);
   const disclaimer =
-    "This report provides hypothetical estimates for informational purposes only. Results are not guaranteed and do not constitute financial advice. Interest-only payments do not reduce your principal balance. Please consult a licensed mortgage broker or financial advisor before making any financial decisions.";
+    "This report provides hypothetical estimates for informational purposes only. Results are not guaranteed and do not constitute financial advice. Calculations assume monthly compounding. Please consult a licensed mortgage broker or financial advisor before making any financial decisions.";
   const lines = doc.splitTextToSize(disclaimer, pageWidth - 50);
   doc.text(lines, 25, y + 14);
 
