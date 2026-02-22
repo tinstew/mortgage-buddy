@@ -54,7 +54,7 @@ export function generatePDF(data: ReportData) {
     body: [
       ["Loan Amount", fmtShort(data.loanAmount)],
       ["Interest Rate", `${data.interestRate.toFixed(2)}%`],
-      ["Term", `${data.termYears} year${data.termYears !== 1 ? "s" : ""}`],
+      ["Term", data.termYears < 1 ? `${data.termYears * 12} months` : `${data.termYears} year${data.termYears !== 1 ? "s" : ""}`],
     ],
     theme: "grid",
     headStyles: { fillColor: [26, 42, 68], textColor: [255, 255, 255], fontSize: 10 },
