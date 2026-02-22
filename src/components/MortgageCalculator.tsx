@@ -17,9 +17,10 @@ const formatCurrencyDetailed = (val: number) =>
   new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
 
 const TERM_OPTIONS = [
-  { label: "6 Months", value: "0.5", months: 6 },
-  { label: "1 Year", value: "1", months: 12 },
-  { label: "2 Years", value: "2", months: 24 },
+  { label: "6 Months", value: "6", months: 6 },
+  { label: "12 Months", value: "12", months: 12 },
+  { label: "18 Months", value: "18", months: 18 },
+  { label: "24 Months", value: "24", months: 24 },
 ];
 
 interface AmortizationRow {
@@ -31,23 +32,19 @@ interface AmortizationRow {
 }
 
 function calculateAmortization(loanAmount: number, annualRate: number, totalMonths: number): AmortizationRow[] {
-  const r = annualRate / 100 / 12;
-  if (r === 0 || loanAmount === 0) return [];
+  if (annualRate === 0 || loanAmount === 0 || totalMonths === 0) return [];
 
-  const M = (loanAmount * r * Math.pow(1 + r, totalMonths)) / (Math.pow(1 + r, totalMonths) - 1);
+  // Interest-only: monthly payment = (loan amount × annual rate%) / term in months
+  const monthlyPayment = (loanAmount * (annualRate / 100)) / totalMonths;
   const rows: AmortizationRow[] = [];
-  let balance = loanAmount;
 
   for (let m = 1; m <= totalMonths; m++) {
-    const interestPortion = balance * r;
-    const principalPortion = M - interestPortion;
-    balance = Math.max(0, balance - principalPortion);
     rows.push({
       month: m,
-      payment: M,
-      principal: principalPortion,
-      interest: interestPortion,
-      balance,
+      payment: monthlyPayment,
+      principal: 0,
+      interest: monthlyPayment,
+      balance: loanAmount,
     });
   }
   return rows;
@@ -56,7 +53,7 @@ function calculateAmortization(loanAmount: number, annualRate: number, totalMont
 const MortgageCalculator = () => {
   const [loanAmount, setLoanAmount] = useState(500000);
   const [interestRate, setInterestRate] = useState(10);
-  const [termValue, setTermValue] = useState("1");
+  const [termValue, setTermValue] = useState("12");
   const [shareOpen, setShareOpen] = useState(false);
   const [embedOpen, setEmbedOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -66,13 +63,12 @@ const MortgageCalculator = () => {
   const termOption = TERM_OPTIONS.find(t => t.value === termValue) || TERM_OPTIONS[1];
   const totalMonths = termOption.months;
 
-  // Monthly compounding: M = P * [r(1+r)^n] / [(1+r)^n - 1]
-  const monthlyRate = interestRate / 100 / 12;
-  const monthlyPayment = loanAmount > 0 && monthlyRate > 0
-    ? (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / (Math.pow(1 + monthlyRate, totalMonths) - 1)
+  // Interest-only: monthly payment = (loan amount × annual rate%) / term in months
+  const monthlyPayment = loanAmount > 0 && interestRate > 0 && totalMonths > 0
+    ? (loanAmount * (interestRate / 100)) / totalMonths
     : 0;
   const totalPaid = monthlyPayment * totalMonths;
-  const totalInterest = totalPaid - loanAmount;
+  const totalInterest = totalPaid; // All payments are interest in interest-only
 
   const amortization = useMemo(
     () => calculateAmortization(loanAmount, interestRate, totalMonths),
@@ -82,9 +78,9 @@ const MortgageCalculator = () => {
   const displayedRows = showFullSchedule ? amortization : amortization.slice(0, 6);
 
   const handleGenerateReport = useCallback(() => {
-    generatePDF({ loanAmount, interestRate, termYears: parseFloat(termValue), monthlyPayment, totalInterest });
+    generatePDF({ loanAmount, interestRate, termMonths: totalMonths, monthlyPayment, totalInterest });
     toast({ title: "Report Generated", description: "Your PDF report has been downloaded." });
-  }, [loanAmount, interestRate, termValue, monthlyPayment, totalInterest, toast]);
+  }, [loanAmount, interestRate, totalMonths, monthlyPayment, totalInterest, toast]);
 
   const embedCode = `<iframe src="${window.location.origin}" width="100%" height="800" frameborder="0" style="border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.08);"></iframe>`;
 
@@ -124,10 +120,10 @@ const MortgageCalculator = () => {
           className="text-center mb-8"
         >
           <h2 className="text-3xl md:text-4xl text-foreground mb-2 font-bold">
-            Private Mortgage Calculator
+            Interest-Only Mortgage Calculator
           </h2>
           <p className="text-muted-foreground font-body max-w-md mx-auto text-sm">
-            Monthly compounding. Adjust the inputs below to explore your mortgage scenarios.
+            Interest-only payments. Adjust the inputs below to explore your mortgage scenarios.
           </p>
         </motion.div>
 
@@ -359,7 +355,7 @@ const MortgageCalculator = () => {
           className="mt-8 text-center"
         >
           <p className="text-[11px] text-muted-foreground font-body max-w-xl mx-auto leading-relaxed">
-            This calculator provides hypothetical estimates for informational purposes only. Interest is compounded monthly. Results are not guaranteed and do not constitute financial advice. Please consult a licensed mortgage broker before making any financial decisions.
+            This calculator provides hypothetical estimates for informational purposes only. Payments are interest-only — the principal balance does not decrease. Results are not guaranteed and do not constitute financial advice. Please consult a licensed mortgage broker before making any financial decisions.
           </p>
         </motion.div>
       </main>

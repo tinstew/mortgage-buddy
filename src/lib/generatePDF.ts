@@ -4,7 +4,7 @@ import autoTable from "jspdf-autotable";
 interface ReportData {
   loanAmount: number;
   interestRate: number;
-  termYears: number;
+  termMonths: number;
   monthlyPayment: number;
   totalInterest: number;
 }
@@ -54,7 +54,7 @@ export function generatePDF(data: ReportData) {
     body: [
       ["Loan Amount", fmtShort(data.loanAmount)],
       ["Interest Rate", `${data.interestRate.toFixed(2)}%`],
-      ["Term", data.termYears < 1 ? `${data.termYears * 12} months` : `${data.termYears} year${data.termYears !== 1 ? "s" : ""}`],
+      ["Term", `${data.termMonths} month${data.termMonths !== 1 ? "s" : ""}`],
     ],
     theme: "grid",
     headStyles: { fillColor: [26, 42, 68], textColor: [255, 255, 255], fontSize: 10 },
@@ -75,9 +75,8 @@ export function generatePDF(data: ReportData) {
     head: [["Metric", "Amount"]],
     body: [
       ["Monthly Payment", fmt(data.monthlyPayment)],
-      ["Annual Payment", fmt(data.monthlyPayment * 12)],
-      [`Total Interest Over ${data.termYears} Year${data.termYears !== 1 ? "s" : ""}`, fmt(data.totalInterest)],
-      [`Total Cost (Principal + Interest)`, fmt(data.loanAmount + data.totalInterest)],
+      [`Total Interest Over ${data.termMonths} Month${data.termMonths !== 1 ? "s" : ""}`, fmt(data.totalInterest)],
+      [`Total Cost (Interest Only)`, fmt(data.totalInterest)],
     ],
     theme: "grid",
     headStyles: { fillColor: [210, 170, 60], textColor: [26, 42, 68], fontSize: 10, fontStyle: "bold" },
@@ -95,7 +94,7 @@ export function generatePDF(data: ReportData) {
   doc.text("DISCLAIMER", 25, y + 8);
   doc.setFontSize(7.5);
   const disclaimer =
-    "This report provides hypothetical estimates for informational purposes only. Results are not guaranteed and do not constitute financial advice. Calculations assume monthly compounding. Please consult a licensed mortgage broker or financial advisor before making any financial decisions.";
+    "This report provides hypothetical estimates for informational purposes only. Payments are interest-only — the principal balance does not decrease. Results are not guaranteed and do not constitute financial advice. Please consult a licensed mortgage broker or financial advisor before making any financial decisions.";
   const lines = doc.splitTextToSize(disclaimer, pageWidth - 50);
   doc.text(lines, 25, y + 14);
 
