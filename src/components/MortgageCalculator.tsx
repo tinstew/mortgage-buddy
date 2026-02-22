@@ -34,8 +34,8 @@ interface AmortizationRow {
 function calculateAmortization(loanAmount: number, annualRate: number, totalMonths: number): AmortizationRow[] {
   if (annualRate === 0 || loanAmount === 0 || totalMonths === 0) return [];
 
-  // Interest-only: monthly payment = (loan amount × annual rate%) / term in months
-  const monthlyPayment = (loanAmount * (annualRate / 100)) / totalMonths;
+  // Interest-only: monthly payment = (loan amount × annual rate%) / 12
+  const monthlyPayment = (loanAmount * (annualRate / 100)) / 12;
   const rows: AmortizationRow[] = [];
 
   for (let m = 1; m <= totalMonths; m++) {
@@ -63,9 +63,9 @@ const MortgageCalculator = () => {
   const termOption = TERM_OPTIONS.find(t => t.value === termValue) || TERM_OPTIONS[1];
   const totalMonths = termOption.months;
 
-  // Interest-only: monthly payment = (loan amount × annual rate%) / term in months
-  const monthlyPayment = loanAmount > 0 && interestRate > 0 && totalMonths > 0
-    ? (loanAmount * (interestRate / 100)) / totalMonths
+  // Interest-only: monthly payment = (loan amount × annual rate%) / 12
+  const monthlyPayment = loanAmount > 0 && interestRate > 0
+    ? (loanAmount * (interestRate / 100)) / 12
     : 0;
   const totalPaid = monthlyPayment * totalMonths;
   const totalInterest = totalPaid; // All payments are interest in interest-only
